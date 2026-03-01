@@ -1,0 +1,242 @@
+🧱 FINAL ARCHITECTURE
+Chrome Extension (UI + Context)
+        ↓ HTTPS
+Python Backend (API + Logic)
+        ↓
+LLM + Google APIs
+
+🧩 CHROME EXTENSION STACK
+Core
+
+Manifest Version: Chrome Extension Manifest V3
+
+Language: TypeScript (preferred) or JavaScript
+
+UI: Vanilla JS + HTML + CSS (or minimal React if you’re confident)
+
+Extension Components
+
+Content Script
+
+Injects “Run Agent” button into Gmail DOM
+
+Extracts email subject, body, sender
+
+Side Panel / Popup
+
+Task Board
+
+Stats Panel
+
+Logs Panel
+
+Deadline picker + Discard action
+
+Chrome APIs
+
+chrome.scripting → DOM injection
+
+chrome.runtime → message passing
+
+chrome.storage.local → temporary UI state (NOT tokens)
+
+DO NOT USE
+
+Heavy UI frameworks
+
+Client-side LLM calls
+
+Chrome identity API (unless forced)
+
+🧠 BACKEND STACK (THE BRAIN)
+Language
+
+Python 3.10+
+
+Web Framework
+
+FastAPI ✅ (recommended)
+
+Fast
+
+Async-friendly (but you can stay sync)
+
+Automatic Swagger (great for debugging)
+
+(Flask is acceptable, FastAPI is cleaner.)
+
+🤖 LLM STACK
+Choose ONE
+
+OpenAI API (GPT-4.1 / GPT-4o-mini) → safest
+
+Gemini Pro → strong structured output
+
+Grok → if required by hackathon
+
+LLM Usage
+
+Action extraction (strict JSON)
+
+Confidence scoring
+
+Impact explanation
+
+Meeting prep generation
+
+Guardrails
+
+JSON schema enforced with Pydantic
+
+Retry once on invalid output
+
+Hard fail → “Manual Review”
+
+📧 EMAIL INGESTION
+Option A (Recommended for Extension)
+
+DOM extraction from Gmail
+
+No OAuth
+
+No Gmail API
+
+Demo-safe
+
+Option B (Backup)
+
+Gmail API (read-only)
+
+Only if required
+
+📅 CALENDAR STACK
+Google Calendar API
+
+google-api-python-client
+
+google-auth
+
+Read existing events
+
+Create time blocks
+
+Rules
+
+One calendar
+
+No rescheduling
+
+Hard deadline constraint enforced
+
+🗓️ DATE & TEXT PROCESSING (CRITICAL)
+
+These are non-negotiable:
+
+python-dateutil → relative deadlines
+
+datetime
+
+re → quoted email stripping
+
+pydantic → schema validation
+
+jsonschema → strict enforcement
+
+This is what prevents AI chaos.
+
+🗃️ DATA STORAGE
+Primary
+
+In-memory (Python dicts)
+
+Optional
+
+SQLite (only if persistence needed)
+
+❌ No Postgres
+❌ No Redis
+❌ No Firebase
+
+🧪 TESTING
+
+pytest
+
+Extraction determinism
+
+Deadline resolution
+
+Failure cases
+
+Minimal tests = high credibility.
+
+📤 EXPORTS (OPTIONAL)
+
+CSV: pandas
+
+PDF: fpdf or reportlab
+
+Read-only outputs only.
+
+🔐 SECRETS & CONFIG
+
+.env + python-dotenv
+
+Backend stores:
+
+LLM API key
+
+Google OAuth tokens
+
+Extension stores nothing sensitive.
+
+🚀 DEPLOYMENT (HACKATHON-FRIENDLY)
+Best Options
+
+Local backend (localhost) → safest
+
+Railway / Render → if hosting needed
+
+Judges don’t care where it runs.
+
+🧰 DEV TOOLING
+
+Kiro → vibe coding
+
+VS Code
+
+GitHub
+
+📦 FINAL STACK SUMMARY (ONE SCREEN)
+Extension:
+- Chrome Extension MV3
+- TypeScript / JavaScript
+- Vanilla UI
+- Gmail DOM extraction
+
+Backend:
+- Python 3.10+
+- FastAPI
+- Pydantic
+- python-dateutil
+- Google Calendar API
+- OpenAI / Gemini / Grok
+
+Testing:
+- pytest
+
+Deployment:
+- Localhost or lightweight cloud
+
+⚠️ ONE HARD RULE
+
+If a tool:
+
+introduces async orchestration
+
+needs infra setup
+
+breaks determinism
+
+complicates OAuth
+
+👉 Do not use it.

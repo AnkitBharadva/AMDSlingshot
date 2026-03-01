@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension File Test</title>
+</head>
+<body>
+    <h1>Extension File Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const files = [
+            'manifest.json',
+            'background/service-worker.js',
+            'content/content.css',
+            'dist/content-script.js',
+            'ui/popup.html',
+            'ui/popup.js'
+        ];
+        
+        const results = document.getElementById('results');
+        
+        files.forEach(file => {
+            fetch(chrome.runtime.getURL(file))
+                .then(response => {
+                    const status = response.ok ? '✓ OK' : '✗ 404';
+                    results.innerHTML += `<p>${status}: ${file}</p>`;
+                })
+                .catch(error => {
+                    results.innerHTML += `<p>✗ ERROR: ${file} - ${error.message}</p>`;
+                });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+FEATURES LIST — AI EXECUTION AGENT (MVP + ENHANCED POLISH, REFINED)
+
+=====================================================
+CORE MVP FEATURES (NON-NEGOTIABLE)
+=====================================================
+
+1. Email Ingestion
+Context:
+Enables the system to consume raw communication data that contains unstructured tasks and commitments.
+
+Details:
+- Input: Selected emails (Gmail API or mocked inbox)
+- Extracted fields:
+  - Subject
+  - Body
+  - Sender
+  - Timestamp
+- Supports single emails, threads, and forwarded messages
+- Quoted or forwarded sections are parsed and deprioritized
+- Supports 1–3 emails per run
+- No real-time synchronization
+
+-----------------------------------------------------
+
+2. Action Item Extraction Engine
+Context:
+Transforms chaotic, unstructured email content into clear, executable work items.
+
+Details:
+- Converts email text into deterministic, structured JSON
+- Extracts:
+  - Task title
+  - Task description
+  - Explicit or inferred deadline
+  - Owner (default: user)
+  - Confidence score (0–1)
+  - Source sentence or paragraph
+- Handles:
+  - Multiple tasks per email
+  - Implicit deadlines (e.g., “ASAP”, “next week”, “by EOD”)
+  - Relative date resolution
+- Generates one-line “Why This Matters” impact statement per task
+- No learning, memory, or personalization
+
+-----------------------------------------------------
+
+3. Auto Task Board
+Context:
+Provides a single execution-focused view where extracted tasks become actionable while preserving system determinism.
+
+Details:
+- Read-only structured task list with limited corrective actions
+- Displays:
+  - Task title
+  - Due date
+  - Priority (Low / Medium / High)
+  - Confidence indicator
+  - Status (Normal / Manual Review / Scheduling Conflict)
+- Priority color-coding:
+  - High (Red)
+  - Medium (Yellow)
+  - Low (Neutral)
+- Sortable by due date or priority
+- Tooltip on hover shows confidence score and source context
+
+Allowed User Actions (Strictly Limited):
+- Adjust deadline (date picker only)
+- Discard task
+
+Explicitly Disallowed:
+- Editing task title or description
+- Natural language task modification
+- Re-prompting during execution
+
+-----------------------------------------------------
+
+4. Calendar Auto-Blocking
+Context:
+Moves tasks from intention to execution by reserving real time on the user’s calendar while enforcing deadline correctness.
+
+Details:
+- Automatically creates calendar events for tasks with deadlines
+- Default time block: 30–60 minutes
+- Optional user-configurable default block duration
+- Scheduling heuristic:
+  - Finds nearest available slot before deadline
+- Soft conflict awareness:
+  - Detects occupied slots
+  - Suggests next available alternative (read-only)
+
+Hard Safety Constraint:
+- IF next available slot is after task deadline:
+  - Do NOT create calendar event
+  - Flag task as “Scheduling Conflict”
+  - Require manual scheduling by user
+
+- Single calendar support
+- No advanced conflict resolution or optimization
+
+-----------------------------------------------------
+
+5. Meeting Detection
+Context:
+Identifies communication that requires preparation rather than direct task execution.
+
+Details:
+- Detects meetings using:
+  - Email keywords
+  - Calendar events
+- Flags tasks and emails associated with meetings
+- Triggers meeting preparation workflow automatically
+
+-----------------------------------------------------
+
+6. Meeting Preparation Generator
+Context:
+Ensures the user enters meetings prepared, aligned, and aware of potential risks.
+
+Details:
+- Generates a structured meeting prep document containing:
+  - Context summary (max 3 lines)
+  - Key talking points
+  - Suggested questions (2–3)
+  - Potential risks or objections
+- Uses only ingested emails for context
+- Prompt-based generation
+- No historical memory or external data
+
+-----------------------------------------------------
+
+7. One-Click “Run Agent” Execution
+Context:
+Provides a frictionless, deterministic experience from input to execution.
+
+Details:
+- Single button triggers full pipeline:
+  1. Email parsing
+  2. Action extraction
+  3. Task creation
+  4. Calendar blocking
+  5. Meeting prep generation
+- Sequential execution only
+- No configuration required during run
+- Visible progress states
+
+-----------------------------------------------------
+
+8. Graceful Error Handling & Logging
+Context:
+Builds trust by handling AI uncertainty and system failures transparently.
+
+Details:
+- If extraction confidence is low or parsing fails:
+  - Task flagged as “Manual Review”
+  - Source email snippet preserved
+- If scheduling fails due to deadline constraints:
+  - Task flagged as “Scheduling Conflict”
+- Execution logs displayed in a read-only panel
+- No silent failures
+
+=====================================================
+ENHANCED SAFE ADD-ON FEATURES
+=====================================================
+
+9. Smart Defaults Engine
+Context:
+Improves prioritization using deterministic rules instead of personalization.
+
+Details:
+- Rule-based enrichment:
+  - Deadlines < 24h → High priority
+  - Keywords like “urgent” → Elevated priority
+  - Important sender → Priority boost
+- Fully deterministic
+- No user profiling or learning
+
+-----------------------------------------------------
+
+10. Execution Timeline View (Optional)
+Context:
+Provides temporal clarity by grouping tasks into actionable time windows.
+
+Details:
+- Groups tasks into:
+  - Today
+  - Tomorrow
+  - Upcoming
+- Read-only visualization
+- No drag-and-drop or editing
+
+-----------------------------------------------------
+
+11. Auto-Generated Daily Plan (Optional)
+Context:
+Helps the user focus by summarizing what must be executed today.
+
+Details:
+- One-paragraph summary of today’s tasks
+- Generated after pipeline execution
+- Read-only output
+
+-----------------------------------------------------
+
+12. Feedback & Stats Panel
+Context:
+Reinforces value by summarizing system impact after execution.
+
+Details:
+- Displays:
+  - Number of tasks extracted
+  - Number of high-confidence tasks
+  - Number of calendar blocks created
+  - Number of meetings prepared
+- Includes “Regenerate” option to rerun extraction
+- No manual edits
+
+=====================================================
+OPTIONAL EXPANSIONS (LOW RISK)
+=====================================================
+
+13. Multi-Language Email Support
+Context:
+Ensures usability for bilingual or multilingual communication.
+
+Details:
+- Supports mixed-language emails (e.g., English + Hindi)
+- Implemented via LLM prompt configuration
+- No separate language detection model
+
+-----------------------------------------------------
+
+14. Export Capabilities
+Context:
+Allows reuse of generated outputs outside the system.
+
+Details:
+- One-click export of:
+  - Task board (CSV)
+  - Meeting prep document (PDF)
+- Read-only exports
+- No external integrations
+
+-----------------------------------------------------
+
+15. Accessibility Enhancements
+Context:
+Improves usability for diverse users and environments.
+
+Details:
+- Screen-reader-friendly labels
+- High-contrast UI support
+- Optional dark mode
+
+-----------------------------------------------------
+
+16. Testing & Reliability Framework
+Context:
+Demonstrates engineering rigor and production awareness.
+
+Details:
+- Unit tests for extraction logic
+- Deterministic test inputs and outputs
+- Focus on edge cases and failure modes
+
+=====================================================
+EXPLICITLY EXCLUDED FEATURES
+=====================================================
+
+- Real-time email synchronization
+- Slack / WhatsApp ingestion
+- Voice or call agents
+- Auto-sending emails or messages
+- Multi-user collaboration
+- Role-based access control
+- Task editing beyond deadline adjustment or discard
+- Notifications or reminders
+- Long-term memory or personalization
+- Learning from user behavior
+- Advanced scheduling optimization
+- Natural language task modification
+
+=====================================================
+END OF FEATURES LIST
+=====================================================

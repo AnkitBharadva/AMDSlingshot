@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Execution Agent</title>
+    <style>
+      body {
+        width: 400px;
+        padding: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 16px 0;
+      }
+      h2 {
+        font-size: 14px;
+        margin: 16px 0 8px 0;
+        color: #5f6368;
+      }
+      .form-group {
+        margin-bottom: 12px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 4px;
+        color: #202124;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        font-size: 13px;
+        box-sizing: border-box;
+      }
+      input:focus {
+        outline: none;
+        border-color: #1a73e8;
+      }
+      button {
+        width: 100%;
+        padding: 10px 16px;
+        background-color: #1a73e8;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-top: 8px;
+      }
+      button:hover {
+        background-color: #1557b0;
+      }
+      button:disabled {
+        background-color: #dadce0;
+        cursor: not-allowed;
+      }
+      .status {
+        margin-top: 12px;
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 13px;
+        display: none;
+      }
+      .status.success {
+        background-color: #e6f4ea;
+        color: #137333;
+        display: block;
+      }
+      .status.error {
+        background-color: #fce8e6;
+        color: #c5221f;
+        display: block;
+      }
+      .divider {
+        height: 1px;
+        background-color: #dadce0;
+        margin: 16px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>AI Execution Agent</h1>
+    
+    <h2>Settings</h2>
+    <div class="form-group">
+      <label for="backendUrl">Backend URL</label>
+      <input type="text" id="backendUrl" placeholder="http://localhost:8000" />
+    </div>
+    
+    <div class="form-group">
+      <label for="calendarId">Calendar ID (Gmail address)</label>
+      <input type="text" id="calendarId" placeholder="your-email@gmail.com" />
+    </div>
+    
+    <div class="form-group">
+      <label for="timezone">Timezone</label>
+      <input type="text" id="timezone" placeholder="America/New_York" />
+    </div>
+    
+    <button id="saveSettings">Save Settings</button>
+    
+    <div class="divider"></div>
+    
+    <button id="runAgent">Run Agent</button>
+    
+    <div id="status" class="status"></div>
+    
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,133 @@
+# PROJECT: AI EXECUTION AGENT (CHROME EXTENSION + FASTAPI)
+
+## 1. PROJECT OVERVIEW
+You are an expert Full-Stack AI Engineer. Your goal is to build the "AI Execution Agent," a Chrome Extension that integrates with a Python backend to extract tasks from Gmail, schedule them on Google Calendar, and generate meeting prep documents.
+
+**Core Philosophy:**
+* **User-Initiated Only:** No background execution. [cite_start]No automation without consent[cite: 1, 2].
+* **Determinism:** No "learning" or memory persistence. [cite_start]The system is stateless and rule-based[cite: 6, 12].
+* **Hard Safety:** If a task deadline conflicts with existing calendar events, DO NOT book it. [cite_start]Flag it as a conflict[cite: 7].
+
+---
+
+## 2. TECH STACK & ARCHITECTURE
+
+### **A. [cite_start]Frontend: Chrome Extension (Manifest V3)** [cite: 27]
+* [cite_start]**Language:** Vanilla JavaScript or TypeScript (No heavy frameworks like React unless strictly necessary)[cite: 27].
+* **Components:**
+    * [cite_start]**Content Script:** Injects "Run Agent" button into Gmail DOM[cite: 27].
+    * [cite_start]**Side Panel:** Main UI for results (Task Board, Stats, Logs)[cite: 27].
+* **APIs:**
+    * [cite_start]`chrome.scripting` (DOM injection)[cite: 27].
+    * [cite_start]`chrome.runtime` (Message passing)[cite: 27].
+    * [cite_start]`chrome.storage.local` (Temporary UI state only; NO tokens)[cite: 27].
+* **Ingestion:** DOM extraction from Gmail (Subject, Body, Sender). [cite_start]No Gmail API for content extraction[cite: 28].
+
+### **B. [cite_start]Backend: Python API (The Brain)** [cite: 28]
+* [cite_start]**Language:** Python 3.10+[cite: 28].
+* [cite_start]**Framework:** FastAPI (Async-friendly, automatic Swagger)[cite: 28].
+* **LLM:** OpenAI (GPT-4o-mini) or Gemini Pro. [cite_start]**MUST** use strict JSON outputs[cite: 28].
+* [cite_start]**Validation:** Pydantic (Schema enforcement)[cite: 28].
+* [cite_start]**Calendar:** Google Calendar API (`google-api-python-client`)[cite: 28].
+* [cite_start]**Date Processing:** `python-dateutil` for relative deadlines, `datetime` for strict handling[cite: 29].
+* **Storage:** In-memory (Python dicts) or SQLite. [cite_start]**NO** Postgres, Redis, or Firebase[cite: 30].
+
+---
+
+## 3. DETAILED EXECUTION FLOW
+
+### [cite_start]**Phase 1: Extension Idle State** [cite: 3]
+* **Trigger:** User opens Gmail.
+* **Action:** Inject "Run Agent" button and hidden side panel.
+* [cite_start]**Constraint:** No API calls, no LLM usage, no OAuth while idle[cite: 3].
+
+### [cite_start]**Phase 2: User Trigger & Extraction** [cite: 3, 4]
+* **Trigger:** User clicks "Run Agent".
+* **Action:**
+    1.  Open Side Panel & show loading spinner.
+    2.  [cite_start]Extract Email Context: Subject, Cleaned Body (strip HTML/quotes), Sender, Timestamp[cite: 3, 4].
+    3.  [cite_start]**Prohibited:** Do not parse deadlines or infer tasks on the client side[cite: 3].
+    4.  [cite_start]Send Payload to Backend (`POST /run-agent`)[cite: 4].
+
+### [cite_start]**Phase 3: Backend Processing (The Logic Core)** [cite: 5, 6, 7, 8, 9]
+
+[cite_start]**Step 3.1: Validation** [cite: 5]
+* Check for required fields and non-empty content. Fail immediately if invalid (no silent failures).
+
+[cite_start]**Step 3.2: LLM Extraction** [cite: 6]
+* **Input:** Email context.
+* **Task:** Extract tasks, infer deadlines (explicit or relative), assign confidence score (0-1), generate "Why this matters" logic.
+* **Constraint:** Strict JSON output only. Retry once on malformed output. [cite_start]If it fails, downgrade to "Manual Review"[cite: 6].
+
+[cite_start]**Step 3.3: Post-Processing (Deterministic)** [cite: 6]
+* **Priority Rules:**
+    * [cite_start]Deadline < 24h = High Priority[cite: 19].
+    * [cite_start]Keywords "Urgent" = Elevated Priority[cite: 19].
+* [cite_start]**Date Resolution:** Convert relative dates ("next Friday") to absolute ISO timestamps[cite: 6].
+
+[cite_start]**Step 3.4: Calendar Scheduling (Safety Critical)** [cite: 7, 14]
+* For each task with a deadline:
+    1.  Query Google Calendar for existing events.
+    2.  Find the nearest available slot *before* the deadline.
+    3.  **HARD CONSTRAINT:** If `next_available_slot > task_deadline`:
+        * **Action:** DO NOT create event.
+        * [cite_start]**Flag:** Mark task as "Scheduling Conflict"[cite: 7].
+    4.  Else: Create event and store metadata.
+* **Rules:** Single calendar only. No auto-rescheduling. [cite_start]No booking after deadlines[cite: 7].
+
+[cite_start]**Step 3.5: Meeting Prep** [cite: 9, 15, 16]
+* If meeting context is detected:
+    * [cite_start]Generate a prep document: Context Summary (max 3 lines), Talking Points, Suggested Questions, Potential Risks[cite: 16].
+    * **Context:** Use *only* the current email. [cite_start]No historical memory[cite: 9].
+
+[cite_start]**Step 3.6: Final Response Assembly** [cite: 10]
+* Compile JSON: `{ tasks: [...], calendar: { created: N, conflicts: M }, meeting_prep: {...}, stats: {...} }`.
+
+### [cite_start]**Phase 4: UI Rendering & User Action** [cite: 8, 13]
+* **Render:**
+    * [cite_start]**Task Board:** Columns/List with Status Labels (Normal, Manual Review, Conflict)[cite: 13].
+    * [cite_start]**Tooltips:** Show Confidence Score + Source Snippet on hover[cite: 13].
+    * [cite_start]**Stats Panel:** Tasks extracted, High confidence count, Calendar blocks created[cite: 22].
+* **Allowed User Actions:**
+    * **Discard Task:** Remove from list.
+    * **Adjust Deadline:** Date picker ONLY. [cite_start]Triggers a small backend call to re-check scheduling[cite: 8].
+* **Prohibited Actions:** No editing task titles/descriptions. [cite_start]No natural language modification[cite: 13].
+
+---
+
+## 4. FEATURE SPECIFICATIONS
+
+### **Core MVP Features**
+1.  **Email Ingestion:** Handles single emails, threads, and forwarded messages. [cite_start]Parses out quoted sections[cite: 11].
+2.  [cite_start]**Action Item Extraction:** Deterministic JSON extraction of Title, Description, Deadline, Owner, Confidence[cite: 12].
+3.  [cite_start]**Auto Task Board:** Read-only view with limited corrective actions (Date picker/Discard)[cite: 13].
+4.  [cite_start]**Calendar Auto-Blocking:** Default 30-60 min blocks. strictly enforces deadlines[cite: 14].
+5.  [cite_start]**Meeting Prep Generator:** Generates structured prep docs from email context[cite: 16].
+6.  **Error Handling:** "Manual Review" for low confidence; "Scheduling Conflict" for calendar issues. [cite_start]No silent failures[cite: 18].
+
+### **Enhanced Features (Polished MVP)**
+1.  [cite_start]**Smart Defaults:** Rule-based priority (e.g., <24h = High)[cite: 19].
+2.  [cite_start]**Execution Timeline:** Read-only view grouping tasks by Today/Tomorrow[cite: 20].
+3.  [cite_start]**Feedback Panel:** Summarizes system impact (e.g., "3 tasks extracted")[cite: 22].
+4.  [cite_start]**Multi-Language Support:** Handled via LLM prompt (e.g., mixed English/Hindi)[cite: 23].
+5.  [cite_start]**Export:** One-click CSV (Tasks) or PDF (Meeting Prep)[cite: 24].
+
+---
+
+## [cite_start]5. NON-NEGOTIABLES & EXCLUSIONS [cite: 33]
+* **NO** async orchestration tools.
+* **NO** infrastructure setup (Docker/K8s) unless trivial.
+* **NO** real-time email sync or background polling.
+* **NO** Slack/WhatsApp integration.
+* **NO** auto-sending emails.
+* **NO** long-term memory or user profiling.
+
+---
+
+## 6. DEVELOPMENT PLAN
+**Step 1:** Setup Backend (FastAPI + Pydantic Models + Dummy Endpoint).
+**Step 2:** Setup Extension (Manifest V3 + Content Script Injection).
+**Step 3:** Implement Email Parsing (Frontend) -> API Connection.
+**Step 4:** Implement LLM Extraction Logic (Backend).
+**Step 5:** Implement Google Calendar Integration (Auth + Conflict Logic).
+**Step 6:** Build UI Visualization (Task Board + Stats).

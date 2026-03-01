@@ -1,0 +1,281 @@
+ACTUAL EXECUTION FLOW — AI EXECUTION AGENT (CHROME EXTENSION)
+
+=====================================================
+HIGH-LEVEL SYSTEM FLOW
+=====================================================
+
+User opens Gmail
+      ↓
+Chrome Extension injects UI (idle state)
+      ↓
+User clicks “Run Agent”
+      ↓
+Email context extracted (read-only)
+      ↓
+Payload sent to Backend API
+      ↓
+LLM processes + output validated
+      ↓
+Tasks generated + post-processed
+      ↓
+Calendar scheduling attempted (with hard constraints)
+      ↓
+Meeting preparation generated (if applicable)
+      ↓
+Final structured response returned
+      ↓
+Extension UI renders results (tasks, stats, status)
+
+All actions are explicitly user-initiated.
+No background execution. No automation without consent.
+
+=====================================================
+DETAILED PROGRAM FLOW
+=====================================================
+
+1. Extension Loads (Idle State)
+
+Trigger:
+- User opens Gmail
+
+Behavior:
+- Content script injects:
+  - “Run Agent” button into Gmail UI
+  - Side panel container (hidden by default)
+
+Constraints:
+- No API calls
+- No LLM usage
+- No OAuth usage
+
+Outcome:
+- Extension is present but inert
+
+-----------------------------------------------------
+
+2. User Clicks “Run Agent”
+
+Trigger:
+- Explicit user interaction
+
+Behavior:
+- Side panel opens
+- Loading state activated
+- Button disabled to prevent double execution
+
+Rationale:
+- Prevents surprise behavior
+- Ensures judge-visible intent
+
+-----------------------------------------------------
+
+3. Email Context Extraction (Extension Side)
+
+Extracted fields:
+- Email subject
+- Email body (cleaned text)
+- Sender
+- Timestamp
+- Thread ID (optional)
+
+Light preprocessing only:
+- Strip HTML
+- Remove quoted / forwarded replies (regex-based)
+- Preserve most recent message content
+
+Explicitly prohibited:
+- Deadline parsing
+- Task inference
+- Any business logic
+
+-----------------------------------------------------
+
+4. Payload Sent to Backend
+
+Request:
+POST /run-agent
+
+Payload:
+{
+  "email": {
+    "subject": "...",
+    "body": "...",
+    "sender": "...",
+    "timestamp": "..."
+  }
+}
+
+Extension state:
+- Spinner shown
+- UI locked until response
+
+-----------------------------------------------------
+
+5. Backend: Input Validation
+
+Validation checks:
+- Required fields present
+- Email body length within bounds
+- Non-empty content
+
+Failure handling:
+- Immediate error response
+- Error rendered in extension UI
+
+No silent failures.
+
+-----------------------------------------------------
+
+6. Backend: Action Extraction (LLM)
+
+LLM responsibilities:
+- Extract tasks
+- Infer explicit or implicit deadlines
+- Assign confidence score per task
+- Generate “Why this matters” explanation
+- Output STRICT JSON only
+
+Backend enforcement:
+- Schema validation (Pydantic / JSON Schema)
+- One retry on malformed output
+- On failure: downgrade task to Manual Review
+
+-----------------------------------------------------
+
+7. Backend: Task Post-Processing (Deterministic)
+
+Non-LLM logic:
+- Priority assignment (rule-based)
+- Status assignment:
+  - Normal
+  - Manual Review (low confidence / ambiguity)
+- Relative date resolution using date utilities
+
+No inference. No learning.
+
+-----------------------------------------------------
+
+8. Backend: Calendar Scheduling
+
+For each task with a deadline:
+1. Query existing calendar events
+2. Compute nearest available slot BEFORE deadline
+3. Enforce hard safety constraint:
+
+IF next_available_slot > task_deadline
+→ DO NOT create calendar event
+→ Mark task as “Scheduling Conflict”
+
+Otherwise:
+- Create calendar event
+- Store event metadata
+
+No auto-rescheduling.
+No booking after deadlines.
+
+-----------------------------------------------------
+
+9. Backend: Meeting Detection & Preparation
+
+If meeting context detected:
+- Generate preparation document containing:
+  - Context summary
+  - Talking points
+  - Suggested questions
+  - Potential risks / objections
+
+Constraints:
+- Uses only current email context
+- No historical memory
+- Separate prompt, same LLM
+
+-----------------------------------------------------
+
+10. Backend: Compile Final Response
+
+Response payload includes:
+{
+  "tasks": [...],
+  "calendar": {
+    "events_created": N,
+    "conflicts": M
+  },
+  "meeting_prep": {...},
+  "stats": {
+    "tasks_extracted": X,
+    "high_confidence": Y,
+    "manual_review": Z
+  },
+  "logs": [...]
+}
+
+-----------------------------------------------------
+
+11. Extension: Render Results
+
+UI components updated:
+- Task Board with status labels
+- Confidence indicators + tooltips
+- Stats / feedback panel
+- Execution logs panel
+
+Allowed user actions (strictly limited):
+- Adjust deadline (date picker only)
+- Discard task
+
+Any adjustment:
+- Triggers a small, scoped backend call
+- Re-applies scheduling logic
+
+-----------------------------------------------------
+
+12. Extension: End State
+
+User sees:
+- Structured execution plan
+- Calendar updated where valid
+- Meeting prep ready (if applicable)
+
+System behavior:
+- No background polling
+- No auto-follow-ups
+- No memory persistence
+
+User remains fully in control.
+
+=====================================================
+FAILURE FLOWS
+=====================================================
+
+LLM Failure:
+- Task flagged as “Manual Review”
+- Source snippet preserved
+- No blocking of pipeline
+
+Calendar Failure:
+- Task flagged as “Scheduling Conflict”
+- No calendar event created
+
+Network Failure:
+- Error surfaced in UI
+- Retry button shown
+- No automatic retries
+
+=====================================================
+COMPONENT RESPONSIBILITIES
+=====================================================
+
+Chrome Extension:
+- UI rendering
+- Email context extraction
+- User-triggered actions only
+
+Backend:
+- LLM interaction
+- All business logic
+- Calendar operations
+- Validation, safety, and correctness
+
+=====================================================
+END OF EXECUTION FLOW
+=====================================================

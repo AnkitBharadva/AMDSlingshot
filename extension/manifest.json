@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "AI Execution Agent",
+  "version": "1.0.0",
+  "description": "Extract actionable tasks from Gmail emails and schedule them on Google Calendar",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.gmail.com/*",
+    "https://mail.google.com/*",
+    "http://localhost:8000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.gmail.com/*", "https://mail.google.com/*"],
+      "js": ["dist/content-script.js"],
+      "css": ["content/content.css"]
+    }
+  ],
+  "action": {
+    "default_popup": "ui/popup.html",
+    "default_title": "Run AI Execution Agent"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["test-extension.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
