@@ -55,8 +55,8 @@ extension/node_modules/
 
 # Build outputs
 *.js.map
-extension/**/*.js
-!extension/**/*.test.js
+extension/dist/**/*.js
+extension/node_modules/**/*.js
 
 # Logs
 *.log
